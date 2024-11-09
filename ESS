@@ -1,0 +1,127 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+
+const questions = [
+  "Sitting and reading",
+  "Watching TV",
+  "Sitting inactive in a public place (e.g., a theater or a meeting)",
+  "As a passenger in a car for an hour without a break",
+  "Lying down to rest in the afternoon when circumstances permit",
+  "Sitting and talking to someone",
+  "Sitting quietly after a lunch without alcohol",
+  "In a car, while stopped for a few minutes in traffic"
+];
+
+const interpretations = [
+  { range: [0, 7], text: "It is unlikely that you are abnormally sleepy." },
+  { range: [8, 9], text: "You have an average amount of daytime sleepiness." },
+  { range: [10, 15], text: "You may be excessively sleepy depending on the situation. You may want to consider seeking medical attention." },
+  { range: [16, 24], text: "You are excessively sleepy and should consider seeking medical attention." }
+];
+
+const EpworthSleepinessScale = () => {
+  const [currentPage, setCurrentPage] = useState(0);
+  const [answers, setAnswers] = useState(Array(questions.length).fill(0));
+
+  const handleAnswer = (value) => {
+    const newAnswers = [...answers];
+    newAnswers[currentPage - 1] = value;
+    setAnswers(newAnswers);
+    setCurrentPage(currentPage + 1);
+  };
+
+  const totalScore = answers.reduce((sum, value) => sum + value, 0);
+
+  const getInterpretation = (score) => {
+    return interpretations.find(({ range }) => score >= range[0] && score <= range[1]).text;
+  };
+
+  const resetTest = () => {
+    setCurrentPage(0);
+    setAnswers(Array(questions.length).fill(0));
+  };
+
+  const pageVariants = {
+    initial: { opacity: 0, x: '-100%' },
+    in: { opacity: 1, x: 0 },
+    out: { opacity: 0, x: '100%' }
+  };
+
+  const pageTransition = {
+    type: 'tween',
+    ease: 'anticipate',
+    duration: 0.5
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentPage}
+          initial="initial"
+          animate="in"
+          exit="out"
+          variants={pageVariants}
+          transition={pageTransition}
+        >
+          {currentPage === 0 && (
+            <CardContent className="p-6">
+              <CardHeader>
+                <CardTitle>Epworth Sleepiness Scale</CardTitle>
+              </CardHeader>
+              <p className="mb-4">
+                Disclaimer: This self-assessment tool is for informational purposes only and does not substitute professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+              </p>
+              <Button onClick={() => setCurrentPage(1)}>Start Test</Button>
+            </CardContent>
+          )}
+
+          {currentPage > 0 && currentPage <= questions.length && (
+            <CardContent className="p-6">
+              <CardHeader>
+                <CardTitle>Question {currentPage}</CardTitle>
+              </CardHeader>
+              <p className="mb-4">How likely are you to doze off or fall asleep in the following situation:</p>
+              <p className="font-bold mb-4">{questions[currentPage - 1]}</p>
+              <div className="flex flex-col space-y-2">
+                {[
+                  { value: 0, label: 'No chance of dozing' },
+                  { value: 1, label: 'Slight chance of dozing' },
+                  { value: 2, label: 'Moderate chance of dozing' },
+                  { value: 3, label: 'High chance of dozing' }
+                ].map(({ value, label }) => (
+                  <Button key={value} onClick={() => handleAnswer(value)} variant="outline">
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          )}
+
+          {currentPage > questions.length && (
+            <CardContent className="p-6">
+              <CardHeader>
+                <CardTitle>Your Results</CardTitle>
+              </CardHeader>
+              <p className="mb-4">Your total score: {totalScore}</p>
+              <p className="mb-4">{getInterpretation(totalScore)}</p>
+              <Button onClick={resetTest}>Retake Test</Button>
+            </CardContent>
+          )}
+        </motion.div>
+      </AnimatePresence>
+
+      <CardFooter className="flex justify-between">
+        {currentPage > 0 && currentPage <= questions.length && (
+          <p>
+            Question {currentPage} of {questions.length}
+          </p>
+        )}
+      </CardFooter>
+    </Card>
+  );
+};
+
+export default EpworthSleepinessScale;
